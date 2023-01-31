@@ -1,3 +1,8 @@
+""" YaMDB Collaboration
+Copyright (C) 2023 Authors: Robert, Slava, Dmitry, Yandex practikum
+License Free
+Version: 0.0.1. 2023"""
+
 from pathlib import Path
 
 
@@ -21,6 +26,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'reviews',
 ]
 
 MIDDLEWARE = [
@@ -85,7 +91,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-RU'
 
 TIME_ZONE = 'UTC'
 
@@ -101,3 +107,5 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = ((BASE_DIR / 'static/'),)
+
+AUTH_USER_MODEL = 'reviews.User'
