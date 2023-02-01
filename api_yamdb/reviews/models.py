@@ -77,7 +77,7 @@ class Category(models.Model):
         verbose_name = 'Категория'
 
     def __str__(self):
-        return f'{self.name} {self.name}'
+        return self.name
 
 
 class Genre(models.Model):
@@ -95,7 +95,7 @@ class Genre(models.Model):
         verbose_name = 'Жанр'
 
     def __str__(self):
-        return f'{self.name} {self.name}'
+        return self.name
 
 
 class Title(models.Model):

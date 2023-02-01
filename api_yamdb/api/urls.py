@@ -6,28 +6,28 @@ from .views import (CategoryViewSet, GenreViewSet, TitleViewSet, UsersViewSet)
 app_name = 'api'
 
 
-router = SimpleRouter()
-router.register(
+router_v1 = SimpleRouter()
+router_v1.register(
     'users',
     UsersViewSet,
     basename='users',
 )
-router.register(
+router_v1.register(
     'categories',
     CategoryViewSet,
     basename='сategories'
 )
-router.register(
+router_v1.register(
     'titles',
     TitleViewSet,
     basename='titles',
 )
-router.register(
+router_v1.register(
     'genres',
     GenreViewSet,
     basename='genres',
 )
 
 urlpatterns = [
-    path('v1/', include(router.urls)),
+    path('v1/', include(router_v1.urls)),
 ]
