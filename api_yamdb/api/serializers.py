@@ -58,7 +58,7 @@ class TitleCreateSerializer(serializers.ModelSerializer):
 
 class TitleReciveSerializer(serializers.ModelSerializer):
     """Сериализатор получения произведений."""
-    category = serializers.SlugRelatedField(read_only=True)
+    category = serializers.SlugRelatedField(read_only=True, slug_field='name')
     genre = GenreSerializer(many=True, read_only=True)
 
     class Meta:
