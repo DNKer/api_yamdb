@@ -1,7 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-
 USER = 'user'
 ADMIN = 'admin'
 MODERATOR = 'moderator'
@@ -14,28 +13,17 @@ ROLE_CHOICES = [
 
 
 class User(AbstractUser):
-    username = models.CharField(
-        max_length=150,
-        unique=True,
-        blank=False,
-        null=False,
-        verbose_name = 'Пользователь',
-        help_text = 'Введите имя пользователя'
-    )
     email = models.EmailField(
-        max_length=150,
+        verbose_name='email address',
+        max_length=255,
         unique=True,
-        blank=False,
-        null=False,
-        help_text = 'Введите адрес электронной почты'
     )
     role = models.CharField(
         'Роль',
         max_length=25,
         choices=ROLE_CHOICES,
         default=USER,
-        blank=True,
-        help_text = 'Выберете роль пользователя'
+        help_text='Выберете роль пользователя'
     )
     bio = models.TextField(
         'Биография',
@@ -45,18 +33,17 @@ class User(AbstractUser):
         'Имя',
         max_length=150,
         blank=True,
-        help_text = 'Имя пользователя'
+        help_text='Имя пользователя'
     )
     last_name = models.CharField(
         'Фамилия',
         max_length=150,
         blank=True,
-        help_text = 'Фамилия пользователя'
+        help_text='Фамилия пользователя'
     )
 
-    class Meta:
-        ordering = ('id',)
-        verbose_name = 'Пользователь'
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['email']
 
     def __str__(self):
         return self.username

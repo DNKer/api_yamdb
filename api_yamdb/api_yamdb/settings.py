@@ -3,11 +3,18 @@ Copyright (C) 2023 Authors: Robert, Slava, Dmitry, Yandex practikum
 License Free
 Version: 0.0.1. 2023"""
 
+import os
 from datetime import timedelta
 from pathlib import Path
 
-
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api_yamdb.settings')
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+# Constants
+
+CONFIRMATION_DIR = f'{BASE_DIR}/confirmation'
+
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'p&l%385148kslhtyn^##a1)ilz@4zqj=rq&agdol^##zgl9(vs'
@@ -28,8 +35,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'reviews',
-    'api',
+    'reviews.apps.ReviewsConfig',
+    'api.apps.ApiConfig',
+    'core.apps.CoreConfig',
 ]
 
 MIDDLEWARE = [

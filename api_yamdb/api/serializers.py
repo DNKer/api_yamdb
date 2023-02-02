@@ -1,6 +1,13 @@
 from rest_framework import serializers
-
 from reviews.models import Category, Genre, Title, User
+
+
+class SignUpSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(required=True)
+
+    class Meta:
+        model = User
+        fields = ('username', 'email')
 
 
 class UsersSerializer(serializers.ModelSerializer):
@@ -9,7 +16,7 @@ class UsersSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             'username', 'email', 'first_name',
-            'last_name', 'bio', 'role')
+            'last_name', 'bio', 'role',)
 
 
 class NotAdminSerializer(serializers.ModelSerializer):
