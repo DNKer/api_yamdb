@@ -2,7 +2,7 @@ from rest_framework import serializers
 from reviews.models import Category, Genre, Title, User
 
 
-class SighnUpSerializer(serializers.ModelSerializer):
+class SignUpSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
 
     class Meta:

@@ -29,15 +29,15 @@ from .serializers import (CategorySerializer,
                           TitleCreateSerializer,
                           TitleReciveSerializer,
                           UsersSerializer,
-                          SighnUpSerializer,
+                          SignUpSerializer,
                           )
 
 
-class SighnUp(APIView):
+class SignUp(APIView):
     permission_classes = [AllowAny,]
 
     def post(self, request,):
-        serializer = SighnUpSerializer(data=request.data)
+        serializer = SignUpSerializer(data=request.data)
         confirmation_code = secrets.randbelow(1000000)
         if serializer.is_valid():
             email = request.data['email']
