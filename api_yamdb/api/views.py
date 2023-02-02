@@ -1,17 +1,78 @@
+# TODO: Боб - Разобраться с тем что возвращают методы
+# Дописать Permissions
+# Здесь или в Сериализаторах разобраться с обязательными полями
+# Насовать Exeptions в SighnUp & Activation
+
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-
+from django.http import JsonResponse
+from core.token import get_tokens_for_user
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+import secrets
+from django.core.mail import send_mail
+from reviews.models import User
+from api_yamdb.settings import CONFIRMATION_DIR
+from django.core.exceptions import ValidationError
+import os
 # from .filters import TitleFilter
 from .mixins import ModelMixinSet
 from reviews.models import Category, Genre, Title, User
-from .serializers import (
-    CategorySerializer, GenreSerializer, NotAdminSerializer,
-    TitleCreateSerializer, TitleReciveSerializer, UsersSerializer
-)
+from .serializers import (CategorySerializer,
+                          GenreSerializer,
+                          NotAdminSerializer,
+                          TitleCreateSerializer,
+                          TitleReciveSerializer,
+                          UsersSerializer,
+                          SighnUpSerializer,
+                          )
+
+
+class SighnUp(APIView):
+    permission_classes = [AllowAny,]
+
+    def post(self, request,):
+        serializer = SighnUpSerializer(data=request.data)
+        confirmation_code = secrets.randbelow(1000000)
+        if serializer.is_valid():
+            email = request.data['email']
+            username = request.data['username']
+            send_mail(
+                'Код подтверждения',
+                f'Ваш код подтверждения {confirmation_code}',
+                'YamDB@mail.ru',
+                [email],
+                fail_silently=True
+            )
+            serializer.save()
+            with open(f'{CONFIRMATION_DIR}/{username}.env', mode='w') as f:
+                f.write(str(confirmation_code))
+
+            return JsonResponse({"message": "Код подтверждения отправлен на почту"})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class Activation(APIView):
+    permission_classes = [AllowAny,]
+
+    def post(self, request):
+        username = request.data['username']
+        user_code = int(request.data['confirmation_code'])
+        user = User.objects.get(username=username)
+        path = f'{CONFIRMATION_DIR}/{username}.env'
+        with open(path,) as f:
+            confirmation_code = int(f.read())
+            if user_code == confirmation_code:
+                token = get_tokens_for_user(user)
+                f.close()
+                os.remove(path)
+                return JsonResponse(token)
+            raise ValidationError('Неверный код')
 
 
 class UsersViewSet(viewsets.ModelViewSet):
@@ -22,7 +83,7 @@ class UsersViewSet(viewsets.ModelViewSet):
     """
     queryset = User.objects.all()
     serializer_class = UsersSerializer
-    permission_classes = [IsAdminUser,]
+    permission_classes = [AllowAny,]  # IsAdminUser
     lookup_field = 'username'
     filter_backends = (SearchFilter, )
     search_fields = ('username', )
@@ -55,7 +116,7 @@ class CategoryViewSet(ModelMixinSet):
     """
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    #permission_classes = (,)
+    # permission_classes = (,)
     filter_backends = (SearchFilter, )
     search_fields = ('name', )
     lookup_field = 'slug'
@@ -67,7 +128,7 @@ class GenreViewSet(ModelMixinSet):
     """
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    #permission_classes = (,)
+    # permission_classes = (,)
     filter_backends = (SearchFilter,)
     search_fields = ('name', )
     lookup_field = 'slug'
@@ -79,7 +140,7 @@ class TitleViewSet(ModelViewSet):
     """
     queryset = Title.objects.all()
     serializer_class = TitleReciveSerializer
-    #permission_classes = [,]
+    # permission_classes = [,]
     # filterset_class = TitleFilter
     filterset_fields = ['name']
     ordering_fields = ('name',)
@@ -103,7 +164,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     pass
 
 
-class ReviewViewSet(viewsets.ModelViewSet):	
+class ReviewViewSet(viewsets.ModelViewSet):
     """
     Получить список всех отзывов.
     """

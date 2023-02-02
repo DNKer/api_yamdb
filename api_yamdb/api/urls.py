@@ -1,7 +1,12 @@
 from django.urls import include, path
 from rest_framework.routers import SimpleRouter
 
-from .views import (CategoryViewSet, GenreViewSet, TitleViewSet, UsersViewSet)
+from .views import (Activation,
+                    CategoryViewSet,
+                    GenreViewSet,
+                    SighnUp,
+                    TitleViewSet,
+                    UsersViewSet)
 
 app_name = 'api'
 
@@ -30,4 +35,6 @@ router_v1.register(
 
 urlpatterns = [
     path('v1/', include(router_v1.urls)),
+    path('v1/auth/sighnup/', SighnUp.as_view(), name='sighn_up'),
+    path('v1/auth/token/', Activation.as_view(), name='activation')
 ]
