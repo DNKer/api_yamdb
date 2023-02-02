@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from .filters import TitleFilter
+# from .filters import TitleFilter
 from .mixins import ModelMixinSet
 from reviews.models import Category, Genre, Title, User
 from .serializers import (
@@ -80,7 +80,7 @@ class TitleViewSet(ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleReciveSerializer
     #permission_classes = [,]
-    filterset_class = TitleFilter
+    # filterset_class = TitleFilter
     filterset_fields = ['name']
     ordering_fields = ('name',)
 
