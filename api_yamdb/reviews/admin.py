@@ -1,9 +1,11 @@
 from django.contrib import admin
 
-from reviews.models import Comments, Reviews
+from reviews.models import (
+    Category, Comment, Genre, Review, Title, User
+)
 
 
-@admin.register(Reviews)
+@admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
     """Настройка модели Reviews в админке."""
 
@@ -21,4 +23,8 @@ class ReviewAdmin(admin.ModelAdmin):
     )
 
 
-admin.site.register(Comments)
+admin.site.register(Category)
+admin.site.register(Comment)
+admin.site.register(Genre)
+admin.site.register(Title)
+admin.site.register(User)
