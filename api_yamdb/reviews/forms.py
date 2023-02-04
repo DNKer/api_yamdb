@@ -10,4 +10,4 @@ class CreationForm(UserCreationForm):
         # укажем модель, с которой связана создаваемая форма
         model = User
         # укажем, какие поля должны быть видны в форме и в каком порядке
-        fields = ('username', 'email') 
+        fields = ('username', 'email')
