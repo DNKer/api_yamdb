@@ -1,40 +1,36 @@
-# TODO: Боб - Разобраться с тем что возвращают методы
-# Дописать Permissions
-# Здесь или в Сериализаторах разобраться с обязательными полями
-# Насовать Exeptions в SighnUp & Activation
+import os
+import secrets
 
-from rest_framework import status, viewsets
+from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
+from django.http import JsonResponse
+from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import IsAdminUser, AllowAny
+from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
-from django.http import JsonResponse
-from core.token import get_tokens_for_user
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-import secrets
-from django.core.mail import send_mail
-from reviews.models import User
+
+from api.mixins import ModelMixinSet
+from api.serializers import (
+    CategorySerializer,
+    CommentSerializer,
+    GenreSerializer,
+    NotAdminSerializer,
+    ReviewsSerializer,
+    SignUpSerializer,
+    TitleCreateSerializer,
+    TitleReciveSerializer,
+    UsersSerializer,
+)
 from api_yamdb.settings import CONFIRMATION_DIR
-from django.core.exceptions import ValidationError
-import os
-# from .filters import TitleFilter
-from .mixins import ModelMixinSet
-from reviews.models import Category, Genre, Title, User
-from .serializers import (CategorySerializer,
-                          GenreSerializer,
-                          NotAdminSerializer,
-                          TitleCreateSerializer,
-                          TitleReciveSerializer,
-                          UsersSerializer,
-                          SignUpSerializer,
-                          )
+from core.token import get_tokens_for_user
+from reviews.models import Category, Genre, Review, Title, User
 
 
 class SignUp(APIView):
-    permission_classes = [AllowAny,]
+
+    permission_classes = (permissions.AllowAny,)
 
     def post(self, request,):
         serializer = SignUpSerializer(data=request.data)
@@ -52,13 +48,15 @@ class SignUp(APIView):
             serializer.save()
             with open(f'{CONFIRMATION_DIR}/{username}.env', mode='w') as f:
                 f.write(str(confirmation_code))
-
-            return JsonResponse({"message": "Код подтверждения отправлен на почту"})
+            return JsonResponse(
+                {"message": "Код подтверждения отправлен на почту"}
+            )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class Activation(APIView):
-    permission_classes = [AllowAny,]
+
+    permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
         username = request.data['username']
@@ -81,9 +79,10 @@ class UsersViewSet(viewsets.ModelViewSet):
     Администратор имеет полные права доступа.
     Пользователь может просматривать и редактировать свой аккаунт.
     """
+    
     queryset = User.objects.all()
     serializer_class = UsersSerializer
-    permission_classes = [AllowAny,]  # IsAdminUser
+    permission_classes = (permissions.AllowAny,)
     lookup_field = 'username'
     filter_backends = (SearchFilter, )
     search_fields = ('username', )
@@ -114,6 +113,7 @@ class CategoryViewSet(ModelMixinSet):
     """
     Получить список всех категорий.
     """
+
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     # permission_classes = (,)
@@ -126,6 +126,7 @@ class GenreViewSet(ModelMixinSet):
     """
     Получить список всех жанров.
     """
+
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     # permission_classes = (,)
@@ -134,10 +135,11 @@ class GenreViewSet(ModelMixinSet):
     lookup_field = 'slug'
 
 
-class TitleViewSet(ModelViewSet):
+class TitleViewSet(viewsets.ModelViewSet):
     """
     Получить список всех произведений.
     """
+
     queryset = Title.objects.all()
     serializer_class = TitleReciveSerializer
     # permission_classes = [,]
@@ -157,15 +159,42 @@ class TitleViewSet(ModelViewSet):
         return TitleReciveSerializer
 
 
-class CommentViewSet(viewsets.ModelViewSet):
-    """
-    Получить список всех комментариев.
-    """
-    pass
+class ReviewsViewSet(viewsets.ModelViewSet):
+    """Вьюсет модели Отзывов."""
+
+    serializer_class = ReviewsSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
+    def get_title(self):
+        """Получаем произведение для отзыва."""
+        return get_object_or_404(Title, id=self.kwargs.get('title_id'))
+
+    def get_queryset(self):
+        """Получаем queryset."""
+        return self.get_title().reviews_title.all()
+
+    def perform_create(self, serializer):
+        """Переопределяем метод create."""
+        serializer.save(title=self.get_title(), author=self.request.user,)
 
 
-class ReviewViewSet(viewsets.ModelViewSet):
-    """
-    Получить список всех отзывов.
-    """
-    pass
+class CommentsViewSet(viewsets.ModelViewSet):
+    """Вьюсет модели Комментариев."""
+
+    serializer_class = CommentSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
+    def get_review(self):
+        """Получаем отзыв для комментария."""
+        return get_object_or_404(
+            Review,
+            id=self.kwargs.get('review_id'),
+        )
+
+    def get_queryset(self):
+        """Получаем queryset."""
+        return self.get_review().comments_review.all()
+
+    def perform_create(self, serializer):
+        """Переопределяем метод create."""
+        serializer.save(review=self.get_review(), author=self.request.user)
