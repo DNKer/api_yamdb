@@ -129,6 +129,7 @@ class ReviewsSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, data):
+        """Проверяем, что отзыв на произведение не был написан."""
         if self.context['request'].method != 'POST':
             return data
         author = self.context['request'].user
