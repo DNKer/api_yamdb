@@ -2,10 +2,8 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-
 from api_yamdb.settings import MAX_SCORE_VALUE, MIN_SCORE_VALUE
 from core.models import CreatedModel
-
 
 USER = 'user'
 ADMIN = 'admin'
@@ -23,12 +21,12 @@ class User(AbstractUser):
 
     email = models.EmailField(
         verbose_name='email address',
-        max_length=255,
+        max_length=150,
         unique=True,
     )
     role = models.CharField(
         verbose_name='Роль',
-        max_length=25,
+        max_length=20,
         choices=ROLE_CHOICES,
         default=USER,
         help_text='Выберете роль пользователя'

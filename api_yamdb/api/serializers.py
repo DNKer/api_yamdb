@@ -1,13 +1,11 @@
 from rest_framework import validators, serializers
 
-
 from api_yamdb.settings import MAX_SCORE_VALUE, MIN_SCORE_VALUE
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
 class SignUpSerializer(serializers.ModelSerializer):
     """Сериализатор регистрации."""
-
     email = serializers.EmailField(required=True)
 
     class Meta:

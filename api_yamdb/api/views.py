@@ -1,7 +1,6 @@
 import os
 import secrets
 
-
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.http import JsonResponse
@@ -11,7 +10,6 @@ from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 
 from api.mixins import ModelMixinSet
 from api.serializers import (
@@ -31,6 +29,7 @@ from reviews.models import Category, Genre, Review, Title, User
 
 
 class SignUp(APIView):
+
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request,):
@@ -49,7 +48,6 @@ class SignUp(APIView):
             serializer.save()
             with open(f'{CONFIRMATION_DIR}/{username}.env', mode='w') as f:
                 f.write(str(confirmation_code))
-
             return JsonResponse(
                 {"message": "Код подтверждения отправлен на почту"}
             )
@@ -57,6 +55,7 @@ class SignUp(APIView):
 
 
 class Activation(APIView):
+
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
@@ -80,10 +79,10 @@ class UsersViewSet(viewsets.ModelViewSet):
     Администратор имеет полные права доступа.
     Пользователь может просматривать и редактировать свой аккаунт.
     """
-
+    
     queryset = User.objects.all()
     serializer_class = UsersSerializer
-    permission_classes = (permissions.AllowAny,)  # IsAdminUser
+    permission_classes = (permissions.AllowAny,)
     lookup_field = 'username'
     filter_backends = (SearchFilter, )
     search_fields = ('username', )
