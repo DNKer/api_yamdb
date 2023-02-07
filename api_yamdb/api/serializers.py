@@ -1,21 +1,69 @@
+import os
+import os.path
+
+from django.core.exceptions import ValidationError
 from django.db.models import Avg
 from rest_framework import serializers
+from reviews.models import (ROLE_CHOICES, Category, Comment, Genre, Review,
+                            Title, User)
 
-from api_yamdb.settings import MAX_SCORE_VALUE, MIN_SCORE_VALUE
-from reviews.models import Category, Comment, Genre, Review, Title, User
+from api_yamdb.settings import (CONFIRMATION_DIR, MAX_SCORE_VALUE,
+                                MIN_SCORE_VALUE)
 
 
 class SignUpSerializer(serializers.ModelSerializer):
-    """Сериализатор регистрации."""
-    email = serializers.EmailField(required=True)
+    """
+    Сериализатор формы регистрации
+    """
 
     class Meta:
         model = User
-        fields = ('username', 'email',)
+        fields = ('username', 'email')
+
+    def validate_username(self, username):
+        if username == 'me':
+            raise ValidationError('Недопустимый username')
+        return username
 
 
-class UsersSerializer(serializers.ModelSerializer):
-    """Сериализатор модели User."""
+class ActivationSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор получения JWT-токена
+    """
+    confirmation_code = serializers.IntegerField(required=True)
+
+    class Meta:
+        model = User
+        fields = ('username', 'confirmation_code')
+
+    def validate_username(self, username):
+        if 2 >= len(username) >= 150:
+            return ValidationError('')
+        return username
+
+    def validate(self, data):
+        username = data['username']
+        path = f'{CONFIRMATION_DIR}/{username}.env'
+        if not os.path.exists(path):
+            raise ValidationError(
+                {"Ошибка": 'Получите новый код подтверждения'}
+            )
+        with open(path) as f:
+            confirmation_code = int(f.read())
+            if confirmation_code != int(data['confirmation_code']):
+                raise ValidationError(
+                    {"Ошибка": 'Неверный код подтверждения'}
+                )
+            f.close()
+            os.remove(path)
+            return data
+
+
+class AdminSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор работы администратора с доступом к ролям
+    """
+    role = serializers.ChoiceField(choices=ROLE_CHOICES, required=False)
 
     class Meta:
         model = User
@@ -23,6 +71,22 @@ class UsersSerializer(serializers.ModelSerializer):
             'username', 'email', 'first_name',
             'last_name', 'bio', 'role',
         )
+
+
+class UsersSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор модели User
+    """
+    username = serializers.SlugField(max_length=32)
+    email = serializers.EmailField(max_length=254)
+
+    class Meta:
+        model = User
+        fields = (
+            'username', 'email', 'first_name',
+            'last_name', 'bio', 'role',
+        )
+        read_only_fields = ('username', 'email', 'role',)
 
 
 class NotAdminSerializer(serializers.ModelSerializer):
