@@ -1,7 +1,6 @@
-from django.shortcuts import render
 from django.views.generic import CreateView
 
-from .forms import CreationForm
+from reviews.forms import CreationForm
 
 
 class SignUp(CreateView):

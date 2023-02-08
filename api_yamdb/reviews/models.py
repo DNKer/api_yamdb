@@ -2,8 +2,9 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from api_yamdb.settings import (ADMINS_TEXT_LENGHT, MAX_SCORE_VALUE,
-                                MIN_SCORE_VALUE)
+from api_yamdb.settings import (
+    ADMINS_TEXT_LENGHT, MAX_SCORE_VALUE, MIN_SCORE_VALUE
+)
 
 USER = 'user'
 ADMIN = 'admin'
@@ -42,6 +43,7 @@ class CreatedModel(models.Model):
 
 class User(AbstractUser):
     """Модель Юзера."""
+
     username = models.SlugField(
         max_length=150,
         unique=True,
