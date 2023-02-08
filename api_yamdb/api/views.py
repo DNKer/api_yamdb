@@ -1,43 +1,47 @@
-from api.mixins import ModelMixinSet
-from api.serializers import (ActivationSerializer,
-                             AdminSerializer,
-                             CategorySerializer,
-                             CommentSerializer,
-                             GenreSerializer,
-                             ReviewsSerializer,
-                             SignUpSerializer,
-                             TitleCreateSerializer,
-                             TitleReciveSerializer,
-                             UsersSerializer)
 from auth.get_token import get_tokens_for_user
 from auth.send_code import send_mail_with_code
+from django_filters.rest_framework import DjangoFilterBackend
 from django.http import JsonResponse
 from rest_framework import permissions, status, viewsets
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from reviews.models import Category, Genre, Review, Title, User
 
-from .permissions import (ChangeAdminOnly,
-                          IamOrReadOnly,
-                          ModeratorReadOnly,
-                          StaffOrReadOnly)
+from api.filters import TitleFilter
+from api.mixins import ModelMixinSet
+from api.permissions import (
+    ChangeAdminOnly, IamOrReadOnly,
+    StaffOrReadOnly, AuthorOrStaffOrReadOnly
+)
+from api.serializers import (
+    ActivationSerializer, AdminSerializer, CategorySerializer,
+    CommentSerializer, GenreSerializer, ReviewsSerializer,
+    SignUpSerializer, TitleCreateSerializer,
+    TitleReciveSerializer, UsersSerializer
+)
+from reviews.models import Category, Genre, Review, Title, User
 
 
 class SignUp(APIView):
     """
-    Регистрация
+    Регистрация.
     """
-    permission_classes = [permissions.AllowAny,]
+
+    permission_classes = (permissions.AllowAny,)
 
     def post(self, request,):
         if User.objects.filter(username=request.data.get('username')).exists():
             user = User.objects.get(username=request.data.get('username'))
             if user.email == request.data['email']:
                 send_mail_with_code(request.data)
-                return JsonResponse({"message": "Новый код отправлен на почту"})
-            return Response({"message": "Неверные данные"}, status=status.HTTP_400_BAD_REQUEST)
+                return JsonResponse(
+                    {"message": "Новый код отправлен на почту"}
+                )
+            return Response(
+                {"message": "Неверные данные"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         serializer = SignUpSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -48,9 +52,10 @@ class SignUp(APIView):
 
 class Activation(APIView):
     """
-    Получение JWT-токена
+    Получение JWT-токена.
     """
-    permission_classes = [permissions.AllowAny,]
+
+    permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
         serializer = ActivationSerializer(data=request.data)
@@ -59,13 +64,19 @@ class Activation(APIView):
                 user = User.objects.get(username=request.data['username'])
                 token = get_tokens_for_user(user)
                 return Response(token)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return Response(
+            serializer.errors,
+            status=status.HTTP_404_NOT_FOUND
+        )
 
 
 class MyProfile(APIView):
     """
-    Личный профиль
+    Личный профиль.
     """
 
     permission_classes = (IamOrReadOnly,)
@@ -81,7 +92,10 @@ class MyProfile(APIView):
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
         serializer = UsersSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -91,13 +105,13 @@ class MyProfile(APIView):
 
 class APIUsers(APIView):
     """
-    UsersView
+    UsersView.
     """
 
     queryset = User.objects.all()
     permission_classes = [ChangeAdminOnly]
     filter_backends = [SearchFilter]
-    search_fields = ['username',]
+    search_fields = ['username', ]
 
     def get(self, request, username):
         user = User.objects.get(username=username)
@@ -157,8 +171,8 @@ class TitleViewSet(viewsets.ModelViewSet):
     """
 
     queryset = Title.objects.all()
-    search_fields = ('genre__slug',)
-    filterset_fields = ('genre__slug',)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TitleFilter
     permission_classes = (StaffOrReadOnly,)
     serializer_class = TitleReciveSerializer
 
@@ -175,10 +189,12 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
-    """Вьюсет модели Отзывов."""
+    """
+    Вьюсет модели Отзывов.
+    """
 
     serializer_class = ReviewsSerializer
-    permission_classes = (ModeratorReadOnly,)
+    permission_classes = (AuthorOrStaffOrReadOnly,)
 
     def get_title(self):
         """Получаем произведение для отзыва."""
@@ -194,10 +210,12 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 
 
 class CommentsViewSet(viewsets.ModelViewSet):
-    """Вьюсет модели Комментариев."""
+    """
+    Вьюсет модели Комментариев.
+    """
 
     serializer_class = CommentSerializer
-    permission_classes = (ModeratorReadOnly,)
+    permission_classes = (AuthorOrStaffOrReadOnly,)
 
     def get_review(self):
         """Получаем отзыв для комментария."""

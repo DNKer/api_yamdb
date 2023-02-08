@@ -1,6 +1,6 @@
 from django.contrib.auth.forms import UserCreationForm
 
-from .models import User
+from reviews.models import User
 
 
 #  создадим собственный класс для формы регистрации

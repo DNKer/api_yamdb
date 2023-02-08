@@ -4,16 +4,18 @@ import os.path
 from django.core.exceptions import ValidationError
 from django.db.models import Avg
 from rest_framework import serializers
-from reviews.models import (ROLE_CHOICES, Category, Comment, Genre, Review,
-                            Title, User)
 
-from api_yamdb.settings import (CONFIRMATION_DIR, MAX_SCORE_VALUE,
-                                MIN_SCORE_VALUE)
+from api_yamdb.settings import (
+    CONFIRMATION_DIR, MAX_SCORE_VALUE, MIN_SCORE_VALUE
+)
+from reviews.models import (
+    ROLE_CHOICES, Category, Comment, Genre, Review, Title, User
+)
 
 
 class SignUpSerializer(serializers.ModelSerializer):
     """
-    Сериализатор формы регистрации
+    Сериализатор формы регистрации.
     """
 
     class Meta:
@@ -28,8 +30,9 @@ class SignUpSerializer(serializers.ModelSerializer):
 
 class ActivationSerializer(serializers.ModelSerializer):
     """
-    Сериализатор получения JWT-токена
+    Сериализатор получения JWT-токена.
     """
+
     confirmation_code = serializers.IntegerField(required=True)
 
     class Meta:
@@ -61,8 +64,9 @@ class ActivationSerializer(serializers.ModelSerializer):
 
 class AdminSerializer(serializers.ModelSerializer):
     """
-    Сериализатор работы администратора с доступом к ролям
+    Сериализатор работы администратора с доступом к ролям.
     """
+
     role = serializers.ChoiceField(choices=ROLE_CHOICES, required=False)
 
     class Meta:
@@ -75,8 +79,9 @@ class AdminSerializer(serializers.ModelSerializer):
 
 class UsersSerializer(serializers.ModelSerializer):
     """
-    Сериализатор модели User
+    Сериализатор модели User.
     """
+
     username = serializers.SlugField(max_length=32)
     email = serializers.EmailField(max_length=254)
 

@@ -1,15 +1,11 @@
 from django.urls import include, path
 from rest_framework.routers import SimpleRouter
 
-from .views import (Activation,
-                    APIUsers,
-                    CategoryViewSet,
-                    CommentsViewSet,
-                    GenreViewSet,
-                    MyProfile,
-                    ReviewsViewSet,
-                    SignUp,
-                    TitleViewSet)
+from api.views import (
+    Activation, APIUsers, CategoryViewSet,
+    CommentsViewSet, GenreViewSet, MyProfile,
+    ReviewsViewSet, SignUp, TitleViewSet
+)
 
 app_name = 'api'
 
