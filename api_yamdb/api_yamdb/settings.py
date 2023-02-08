@@ -1,8 +1,3 @@
-""" YaMDB Collaboration
-Copyright (C) 2023 Authors: Robert, Slava, Dmitry, Yandex practikum
-License Free
-Version: 0.1.0. 2023"""
-
 import os
 from datetime import timedelta
 from pathlib import Path
@@ -24,13 +19,13 @@ ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'reviews.apps.ReviewsConfig',
+    'api.apps.ApiConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'api.apps.ApiConfig',
     'rest_framework',
     'django_filters',
 ]
@@ -161,3 +156,5 @@ ADMINS_TEXT_LENGHT = 20
 CONFIRMATION_DIR = f'{BASE_DIR}/auth/confirmation'
 MIN_SCORE_VALUE = 1
 MAX_SCORE_VALUE = 10
+MIN_CONFIRMATION_CODE_VALUE = 100000
+MAX_CONFIRMATION_CODE_VALUE = 999999
