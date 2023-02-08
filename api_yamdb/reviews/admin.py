@@ -1,4 +1,5 @@
 from django.contrib import admin
+<<<<<<< HEAD
 
 from reviews.models import (
     Category, Comment, Genre, Review, Title, User
@@ -66,6 +67,9 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = ('username', 'role',)
     list_filter = ('username',)
     empty_value_display = '-пусто-'
+=======
+from reviews.models import Category, Comment, Genre, Review, Title, User
+>>>>>>> 0452ae49e799016e42a273e25f09b8271441e8e4
 
 
 @admin.register(Review)
@@ -84,3 +88,13 @@ class ReviewAdmin(admin.ModelAdmin):
         'author',
         'text',
     )
+<<<<<<< HEAD
+=======
+
+
+admin.site.register(Category)
+admin.site.register(Comment)
+admin.site.register(Genre)
+admin.site.register(Title)
+admin.site.register(User)
+>>>>>>> 0452ae49e799016e42a273e25f09b8271441e8e4

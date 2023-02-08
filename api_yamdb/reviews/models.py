@@ -2,17 +2,12 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from api_yamdb.settings import MAX_SCORE_VALUE, MIN_SCORE_VALUE
-from core.models import CreatedModel
-
-
+from api_yamdb.settings import (ADMINS_TEXT_LENGHT, MAX_SCORE_VALUE,
+                                MIN_SCORE_VALUE)
 
 USER = 'user'
 ADMIN = 'admin'
 MODERATOR = 'moderator'
-USERNAME_LENGTH = 150
-EMAIL_LENGTH = 254
-CONFIRMATION_CODE_LENGTH = 6
 
 ROLE_CHOICES = [
     (USER, USER),
@@ -21,24 +16,45 @@ ROLE_CHOICES = [
 ]
 
 
+class CreatedModel(models.Model):
+    """Абстрактная модель. Добавляем текст и дату создания."""
+
+    text = models.TextField(
+        verbose_name='Текст',
+        help_text='Введите ваш текст!',
+    )
+    pub_date = models.DateTimeField(
+        verbose_name='Дата публикации',
+        auto_now_add=True,
+    )
+
+    class Meta():
+        abstract = True
+
+    def __str__(self):
+        """Возвращаем укороченный текст модели."""
+        return (
+            self.text[:ADMINS_TEXT_LENGHT] + '...'
+            if len(self.text) >= ADMINS_TEXT_LENGHT
+            else self.text
+        )
+
+
 class User(AbstractUser):
     """Модель Юзера."""
-
-    username = models.CharField(
-        max_length=USERNAME_LENGTH,
+    username = models.SlugField(
+        max_length=150,
         unique=True,
         blank=False,
         null=False,
-        verbose_name = 'Пользователь',
-        help_text = 'Введите имя пользователя'
+        verbose_name='Пользователь',
+        help_text='Введите имя пользователя'
     )
 
     email = models.EmailField(
         verbose_name='email address',
-        max_length=EMAIL_LENGTH,
+        max_length=254,
         unique=True,
-        blank=False,
-        null=False
     )
     role = models.CharField(
         verbose_name='Роль',
@@ -131,8 +147,7 @@ class Title(models.Model):
         related_name='titles',
         verbose_name='Категория',
         null=True,
-        blank=True,
-        db_index=True
+        blank=True
     )
     description = models.TextField(
         verbose_name='Описание',
@@ -157,19 +172,19 @@ class Title(models.Model):
 class Review(CreatedModel):
     """Модель отзывов."""
 
-    title = models.ForeignKey(
-        Title,
-        on_delete=models.CASCADE,
-        related_name='reviews_title',
-        verbose_name='Произведение',
-    )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='reviews_author',
         verbose_name='Автор отзыва',
     )
-    score = models.PositiveSmallIntegerField(
+    title = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        related_name='reviews_title',
+        verbose_name='Отзыв к произведению',
+    )
+    score = models.SmallIntegerField(
         verbose_name='Оценка',
         help_text='Поставьте оценку от 1 до 10',
         validators=(
@@ -183,24 +198,19 @@ class Review(CreatedModel):
             ),
         ),
     )
-    pub_date = models.DateTimeField(
-        'дата публикации',
-        auto_now_add=True,
-        db_index=True
-    )
 
     class Meta:
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
         constraints = [
             models.UniqueConstraint(
-                fields=('title', 'author', ),
-                name='unique_review'
-            )]
-        ordering = ('pub_date',)
-
-    def __str__(self):
-        return self.text
+                fields=[
+                    'author',
+                    'title',
+                ],
+                name='unique_author_title',
+            )
+        ]
 
 
 class Comment(CreatedModel):
@@ -216,7 +226,7 @@ class Comment(CreatedModel):
         Review,
         on_delete=models.CASCADE,
         related_name='comments_review',
-        verbose_name='Отзыв',
+        verbose_name='Комментарии к отзыву',
     )
 
     class Meta:
