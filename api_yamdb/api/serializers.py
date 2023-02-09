@@ -1,5 +1,4 @@
-from django.db.models import Avg
-from rest_framework import serializers
+from rest_framework import validators, serializers
 
 from api_yamdb.settings import MAX_SCORE_VALUE, MIN_SCORE_VALUE
 from reviews.models import Category, Comment, Genre, Review, Title, User
@@ -59,9 +58,6 @@ class GenreSerializer(serializers.ModelSerializer):
 class TitleCreateSerializer(serializers.ModelSerializer):
     """Сериализатор создания произведений."""
 
-    name = serializers.CharField(
-        max_length=200,
-    )
     category = serializers.SlugRelatedField(
         queryset=Category.objects.all(),
         slug_field='slug',
@@ -75,32 +71,29 @@ class TitleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Title
         fields = (
-            '__all__'
+            'id', 'name', 'year',
+            'rating', 'genre', 'category',
         )
 
 
 class TitleReciveSerializer(serializers.ModelSerializer):
     """Сериализатор получения произведений."""
 
-    category = CategorySerializer(
+    category = serializers.SlugRelatedField(
         read_only=True,
+        slug_field='name',
     )
     genre = GenreSerializer(
         many=True,
         read_only=True,
     )
-    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Title
         fields = '__all__'
         read_only_fields = (
-            'id', 'name', 'year', 'rating', 'description',
+            'id', 'name', 'year', 'description'
         )
-
-    def get_rating(self, obj):
-        """Рассчитываем рейтинг произведения."""
-        return obj.reviews_title.aggregate(Avg('score')).get('score__avg')
 
 
 class ReviewsSerializer(serializers.ModelSerializer):
@@ -126,16 +119,10 @@ class ReviewsSerializer(serializers.ModelSerializer):
             )
         return value
 
-    def validate(self, data):
-        """Проверяем, что отзыв на произведение не был написан."""
-        if self.context['request'].method != 'POST':
-            return data
-        author = self.context['request'].user
-        title_id = self.context['view'].kwargs.get('title_id')
-        if Review.objects.filter(author=author, title__id=title_id).exists():
-            raise serializers.ValidationError('Нельзя дважды писать отзыв!')
-        return data
-
+    # def validate(self, data):
+    #     if self.context['request'].method != 'POST':
+    #         return data
+        
 
 class CommentSerializer(serializers.ModelSerializer):
     """Сериализатор модели Комментариев."""

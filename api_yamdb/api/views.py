@@ -144,7 +144,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     serializer_class = TitleReciveSerializer
     # permission_classes = [,]
     # filterset_class = TitleFilter
-    filterset_fields = ['genre__slug']
+    filterset_fields = ['name']
     ordering_fields = ('name',)
 
     def get_serializer_class(self):
@@ -155,8 +155,8 @@ class TitleViewSet(viewsets.ModelViewSet):
         для записи и чтения.
         """
         if self.action in ['list', 'retrieve']:
-            return TitleReciveSerializer
-        return TitleCreateSerializer
+            return TitleCreateSerializer
+        return TitleReciveSerializer
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
