@@ -5,9 +5,9 @@ from .permissions import IsAdmin, IsReadOnly
 
 
 class GenresCategoriesViewSet(mixins.CreateModelMixin,
-                              mixins.DestroyModelMixin,
-                              mixins.ListModelMixin,
-                              viewsets.GenericViewSet):
+    mixins.DestroyModelMixin, mixins.ListModelMixin,
+    viewsets.GenericViewSet
+):
 
     permission_classes = (IsReadOnly | IsAdmin, )
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
