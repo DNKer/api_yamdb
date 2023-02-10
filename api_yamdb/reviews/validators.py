@@ -27,15 +27,4 @@ def validate_username(value):
                     'Имя пользователя me не может быть использовано',
                     code='invalid'
                 )
-        except ValidationError as e:
-            if self.exception:
-                raise self.exception(e.message, code=e.code)
-            raise
-
-
-def validate_year(value):
-    """Проверка года издания произведения."""
-    if value > dt.date.today().year:
-        raise ValidationError(
-            f'Год выхода произведения: {value}, не может быть больше текущего!'
-        )
+        return value
