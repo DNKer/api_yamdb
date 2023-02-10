@@ -20,5 +20,13 @@ class UsernameValidation:
                         )
                     ]
                 )
-            )
-        return value
+        except ValidationError as e:
+            if self.exception:
+                raise self.exception(e.message, code=e.code)
+            raise
+
+def validate_year(value):
+    if value > dt.date.today().year:
+        raise ValidationError(
+            f'Год выхода произведения: {value}, не может быть больше текущего!'
+        )
