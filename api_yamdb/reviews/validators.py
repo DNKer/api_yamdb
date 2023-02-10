@@ -1,24 +1,31 @@
+import datetime as dt
 import re
 
-from django.core.validators import ValidationError
+from django.core.exceptions import ValidationError
 
-INVALID_USERNAME = 'Недопустимое имя пользователя: "{value}".'
-USERNAME_SYMBOLS = re.compile(r'[\w.@+-@./+-]+')
-INVALID_USERNAME_SYMBOLS = 'Недопустимые символы: {value}'
+USERNAME_REGEX = re.compile(r'^[\w.@+-]+$')
 
 
-class UsernameValidation:
-    def validate_username(self, value):
-        if value == 'me':
-            raise ValidationError(INVALID_USERNAME.format(value=value))
-        if not re.match(USERNAME_SYMBOLS, value):
-            raise ValidationError(
-                INVALID_USERNAME_SYMBOLS.format(
-                    value=[
-                        symbol for symbol in value if symbol not in ''.join(
-                            re.findall(USERNAME_SYMBOLS, value)
-                        )
-                    ]
+def validate_username(value):
+    """Проверка имени пользователя на допустимые символы."""
+    if not USERNAME_REGEX.match(value):
+        raise ValidationError(
+            message='допустимы только буквы, цифры и @/./+/-/_',
+            code='invalid'
+        )
+    if value == 'me':
+        raise ValidationError(
+            'Имя пользователя me не может быть использовано',
+            code='invalid'
+        )
+
+    def __call__(self, value):
+        try:
+            super().__call__(value)
+            if value == 'me':
+                raise ValidationError(
+                    'Имя пользователя me не может быть использовано',
+                    code='invalid'
                 )
         except ValidationError as e:
             if self.exception:
