@@ -1,13 +1,12 @@
 import os
 import os.path
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db.models import Avg
+from django.http import Http404
 from rest_framework import serializers
 
-from api_yamdb.settings import (
-    CONFIRMATION_DIR, MAX_SCORE_VALUE, MIN_SCORE_VALUE
-)
 from reviews.models import (
     ROLE_CHOICES, Category, Comment, Genre, Review, Title, User
 )
@@ -40,13 +39,13 @@ class ActivationSerializer(serializers.ModelSerializer):
         fields = ('username', 'confirmation_code')
 
     def validate_username(self, username):
-        if 2 >= len(username) >= 150:
-            return ValidationError('')
-        return username
+        if User.objects.filter(username=username).exists():
+            return username
+        raise Http404
 
     def validate(self, data):
         username = data['username']
-        path = f'{CONFIRMATION_DIR}/{username}.env'
+        path = f'{settings.CONFIRMATION_DIR}/{username}.env'
         if not os.path.exists(path):
             raise ValidationError(
                 {"Ошибка": 'Получите новый код подтверждения'}
@@ -189,7 +188,9 @@ class ReviewsSerializer(serializers.ModelSerializer):
 
     def validate_score(self, value):
         """Проверка выставленной оценки в сериализаторе."""
-        if not MIN_SCORE_VALUE <= value <= MAX_SCORE_VALUE:
+        if not (
+            settings.MIN_SCORE_VALUE <= value <= settings.MAX_SCORE_VALUE
+        ):
             raise serializers.ValidationError(
                 'Оценка может быть только от 1 до 10!'
             )

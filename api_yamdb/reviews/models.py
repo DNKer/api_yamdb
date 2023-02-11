@@ -1,10 +1,7 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-
-from api_yamdb.settings import (
-    ADMINS_TEXT_LENGHT, MAX_SCORE_VALUE, MIN_SCORE_VALUE
-)
 
 USER = 'user'
 ADMIN = 'admin'
@@ -35,8 +32,8 @@ class CreatedModel(models.Model):
     def __str__(self):
         """Возвращаем укороченный текст модели."""
         return (
-            self.text[:ADMINS_TEXT_LENGHT] + '...'
-            if len(self.text) >= ADMINS_TEXT_LENGHT
+            self.text[:settings.ADMINS_TEXT_LENGHT] + '...'
+            if len(self.text) >= settings.ADMINS_TEXT_LENGHT
             else self.text
         )
 
@@ -191,11 +188,11 @@ class Review(CreatedModel):
         help_text='Поставьте оценку от 1 до 10',
         validators=(
             MinValueValidator(
-                MIN_SCORE_VALUE,
+                settings.MIN_SCORE_VALUE,
                 'Оценка должна быть не меньше 1!'
             ),
             MaxValueValidator(
-                MAX_SCORE_VALUE,
+                settings.MAX_SCORE_VALUE,
                 'Оценка должна быть не больше 10!'
             ),
         ),

@@ -30,7 +30,7 @@ class SignUp(APIView):
 
     permission_classes = (permissions.AllowAny,)
 
-    def post(self, request,):
+    def post(self, request):
         if User.objects.filter(username=request.data.get('username')).exists():
             user = User.objects.get(username=request.data.get('username'))
             if user.email == request.data['email']:
@@ -59,18 +59,18 @@ class Activation(APIView):
 
     def post(self, request):
         serializer = ActivationSerializer(data=request.data)
-        if User.objects.filter(username=request.data['username']).exists():
-            if serializer.is_valid():
+        if serializer.is_valid():
+            if User.objects.filter(username=request.data['username']).exists():
                 user = User.objects.get(username=request.data['username'])
                 token = get_tokens_for_user(user)
                 return Response(token)
             return Response(
                 serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_404_NOT_FOUND
             )
         return Response(
             serializer.errors,
-            status=status.HTTP_404_NOT_FOUND
+            status=status.HTTP_400_BAD_REQUEST
         )
 
 
@@ -105,25 +105,21 @@ class MyProfile(APIView):
 
 class APIUsers(APIView):
     """
-    UsersView.
+    UsersView для обращения по username.
     """
 
     queryset = User.objects.all()
     permission_classes = [ChangeAdminOnly]
-    filter_backends = [SearchFilter]
-    search_fields = ['username', ]
 
     def get(self, request, username):
-        user = User.objects.get(username=username)
-        serializer = UsersSerializer(user)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = AdminSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if request.user.is_authenticated:
+            user = get_object_or_404(User, username=username)
+            serializer = UsersSerializer(user)
+            return Response(serializer.data)
+        return Response(
+            'Вы не авторизованы',
+            status=status.HTTP_401_UNAUTHORIZED
+        )
 
     def patch(self, request, username):
         user = User.objects.get(username=username)
@@ -137,6 +133,25 @@ class APIUsers(APIView):
         user = User.objects.get(username=username)
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    """
+    Вьюсет для Юзера.
+    """
+
+    queryset = User.objects.all()
+    serializer_class = UsersSerializer
+    permission_classes = [ChangeAdminOnly]
+    filter_backends = (SearchFilter,)
+    search_fields = ('username',)
+
+    def create(self, request):
+        serializer = AdminSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CategoryViewSet(ModelMixinSet):

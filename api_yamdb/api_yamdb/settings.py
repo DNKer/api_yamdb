@@ -9,8 +9,7 @@ load_dotenv()
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api_yamdb.settings')
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECRET_KEY = os.getenv('SECRET_KEY')
-SECRET_KEY = 'p&l%385148kslhtyn^##a1)ilz@4zqj=rq&agdol^##zgl9(vs'
+SECRET_KEY = os.getenv('SECRET_KEY', default='SECRET_KEY')
 
 DEBUG = True
 
@@ -18,8 +17,8 @@ ALLOWED_HOSTS = ['*']
 
 
 INSTALLED_APPS = [
-    'reviews.apps.ReviewsConfig',
     'api.apps.ApiConfig',
+    'reviews.apps.ReviewsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
