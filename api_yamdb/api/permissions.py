@@ -1,24 +1,55 @@
-from django.contrib.auth import get_user_model
 from rest_framework import permissions
 
-User = get_user_model()
 
-
-class IsAdmin(permissions.BasePermission):
-    """Только администратор."""
+class IamOrReadOnly(permissions.BasePermission):
+    """Сосбтвенник, администратор или только чтение."""
 
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.is_admin
+        return (
+            request.user.is_authenticated
+        )
+
+    def has_object_permission(self, request, view, obj):
+        return (
+            request.user.is_superuser or request.user.role == 'admin'
+            or obj == request.user)
 
 
-class IsReadOnly(permissions.BasePermission):
-    """Только чтение."""
+class ChangeAdminOnly(permissions.BasePermission):
+    """Изменение доступно только администратору."""
 
     def has_permission(self, request, view):
-        return request.method in permissions.SAFE_METHODS
+        return (
+            request.user.is_authenticated
+            and (request.user.is_superuser or request.user.role == 'admin')
+        )
+
+    def has_object_permission(self, request, view, obj):
+        return (
+
+            request.user.is_authenticated
+            and (request.user.is_superuser or request.user.role == 'admin')
+        )
 
 
-class IsStaff(permissions.BasePermission):
+class StaffOrReadOnly(permissions.BasePermission):
+    """Администратор или только чтение."""
+
+    def has_permission(self, request, view):
+        return (
+            request.method in permissions.SAFE_METHODS
+            or (request.user.is_authenticated and request.user.role == 'admin')
+        )
+
+    def has_object_permission(self, request, view, obj):
+        return (
+
+            request.method in permissions.SAFE_METHODS
+            or (request.user.is_authenticated and request.user.role == 'admin')
+        )
+
+
+class AuthorOrStaffOrReadOnly(permissions.BasePermission):
     """Автор, модератор, админ или только чтение."""
 
     def has_permission(self, request, view):
@@ -30,11 +61,7 @@ class IsStaff(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return (
             request.method in permissions.SAFE_METHODS
-            or (
-                request.user.is_authenticated and (
-                    request.user == obj.author
-                    or request.user.is_admin
-                    or request.user.is_moderator
-                )
-            )
+            or obj.author == request.user
+            or request.user.is_superuser
+            or request.user.role in ('moderator', 'admin')
         )
