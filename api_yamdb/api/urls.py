@@ -43,6 +43,7 @@ router_v1.register(
 
 urlpatterns = [
     path('v1/users/me/', MyProfile.as_view(), name='users'),
+    # path('v1/users/', APIUsers.as_view()),
     path('v1/users/<slug:username>/', APIUsers.as_view()),
     path('v1/users/me/', MyProfile.as_view(), name='me'),
     path('v1/auth/signup/', SignUp.as_view(), name='sign_up'),
