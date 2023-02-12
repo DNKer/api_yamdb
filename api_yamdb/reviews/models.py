@@ -1,9 +1,42 @@
 from django.conf import settings
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from .validators import validate_year, validate_username
+USER = 'user'
+ADMIN = 'admin'
+MODERATOR = 'moderator'
+
+ROLE_CHOICES = [
+    (USER, USER),
+    (ADMIN, ADMIN),
+    (MODERATOR, MODERATOR),
+]
+
+
+class CreatedModel(models.Model):
+    """Абстрактная модель. Добавляем текст и дату создания."""
+
+    text = models.TextField(
+        verbose_name='Текст',
+        help_text='Введите ваш текст!',
+    )
+    pub_date = models.DateTimeField(
+        verbose_name='Дата публикации',
+        auto_now_add=True,
+    )
+
+    class Meta():
+        abstract = True
+
+    def __str__(self):
+        """Возвращаем укороченный текст модели."""
+        return (
+            self.text[:settings.ADMINS_TEXT_LENGHT] + '...'
+            if len(self.text) >= settings.ADMINS_TEXT_LENGHT
+            else self.text
+        )
 
 
 class User(AbstractUser):
@@ -127,7 +160,22 @@ class Review(ReviewAndCommentBase):
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name='reviews'
+        related_name='reviews_title',
+        verbose_name='Отзыв к произведению',
+    )
+    score = models.SmallIntegerField(
+        verbose_name='Оценка',
+        help_text='Поставьте оценку от 1 до 10',
+        validators=(
+            MinValueValidator(
+                settings.MIN_SCORE_VALUE,
+                'Оценка должна быть не меньше 1!'
+            ),
+            MaxValueValidator(
+                settings.MAX_SCORE_VALUE,
+                'Оценка должна быть не больше 10!'
+            ),
+        ),
     )
 
     class Meta(ReviewAndCommentBase.Meta):

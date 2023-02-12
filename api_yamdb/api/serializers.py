@@ -1,10 +1,15 @@
+import os
+import os.path
+
 from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
+from django.core.exceptions import ValidationError
+from django.db.models import Avg
+from django.http import Http404
 from rest_framework import serializers
 
-from reviews.validators import validate_username
-from reviews.models import Category, Genre, Comment, Title, Review
+from reviews.models import (
+    ROLE_CHOICES, Category, Comment, Genre, Review, Title, User
+)
 
 User = get_user_model()
 
@@ -12,10 +17,48 @@ User = get_user_model()
 class UsernameSerializer(serializers.Serializer):
     """Сериализатор пользователя."""
 
-    username = serializers.CharField(
-        max_length=150,
-        validators=[validate_username]
-    )
+    confirmation_code = serializers.IntegerField(required=True)
+
+    class Meta:
+        model = User
+        fields = ('username', 'confirmation_code')
+
+    def validate_username(self, username):
+        if User.objects.filter(username=username).exists():
+            return username
+        raise Http404
+
+    def validate(self, data):
+        username = data['username']
+        path = f'{settings.CONFIRMATION_DIR}/{username}.env'
+        if not os.path.exists(path):
+            raise ValidationError(
+                {"Ошибка": 'Получите новый код подтверждения'}
+            )
+        with open(path) as f:
+            confirmation_code = int(f.read())
+            if confirmation_code != int(data['confirmation_code']):
+                raise ValidationError(
+                    {"Ошибка": 'Неверный код подтверждения'}
+                )
+            f.close()
+            os.remove(path)
+            return data
+
+
+class AdminSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор работы администратора с доступом к ролям.
+    """
+
+    role = serializers.ChoiceField(choices=ROLE_CHOICES, required=False)
+
+    class Meta:
+        model = User
+        fields = (
+            'username', 'email', 'first_name',
+            'last_name', 'bio', 'role',
+        )
 
 
 class SignupUserSerializer(UsernameSerializer):
@@ -98,8 +141,15 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
 
 
-class ReviewCreateSerializer(ReviewSerializer):
-    """Сериализатор для создания отзывов."""
+    def validate_score(self, value):
+        """Проверка выставленной оценки в сериализаторе."""
+        if not (
+            settings.MIN_SCORE_VALUE <= value <= settings.MAX_SCORE_VALUE
+        ):
+            raise serializers.ValidationError(
+                'Оценка может быть только от 1 до 10!'
+            )
+        return value
 
     def validate(self, data):
         title_id = self.context['view'].kwargs.get('title_id')
