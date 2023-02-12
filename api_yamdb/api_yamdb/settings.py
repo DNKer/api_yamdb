@@ -9,7 +9,7 @@ load_dotenv()
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api_yamdb.settings')
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY', default='SECRET_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY', default='#7jc3)js0k176thc-z=1%4^s4_6g239*)1%2+oz0qd3@pc7=fb')
 
 DEBUG = True
 
