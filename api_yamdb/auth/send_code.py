@@ -17,7 +17,7 @@ def send_mail_with_code(data):
     send_mail(
         'Код подтверждения',
         f'Ваш код подтверждения {confirmation_code}',
-        'YamDB@mail.ru',
+        settings.DEFAULT_FROM_EMAIL,
         [email],
         fail_silently=True
     )

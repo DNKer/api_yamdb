@@ -25,7 +25,7 @@ class CreatedModel(models.Model):
         auto_now_add=True,
     )
 
-    class Meta():
+    class Meta:
         abstract = True
 
     def __str__(self):
