@@ -4,7 +4,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from api_yamdb.settings import ADMIN, MODERATOR, USER
-
+from .validators import check_future_year
 
 ROLE_CHOICES = [
     (USER, USER),
@@ -161,7 +161,9 @@ class Title(models.Model):
     )
     year = models.IntegerField(
         verbose_name='Год создания',
-        null=True
+        null=True,
+        help_text='Год выхода',
+        validators=[check_future_year]
     )
     category = models.ForeignKey(
         Category,
