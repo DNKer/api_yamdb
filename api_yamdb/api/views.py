@@ -1,6 +1,7 @@
 from auth.get_token import get_tokens_for_user
 from auth.send_code import send_mail_with_code
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Avg
 from django.http import JsonResponse
 from rest_framework import permissions, status, viewsets
 from rest_framework.filters import SearchFilter
@@ -186,6 +187,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     """
 
     queryset = Title.objects.all()
+    #queryset = Title.objects.all().annotate(rating=Avg('reviews__score'))
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
     permission_classes = (StaffOrReadOnly,)

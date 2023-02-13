@@ -107,7 +107,8 @@ TEMPLATES = [
 WSGI_APPLICATION = 'api_yamdb.wsgi.application'
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-EMAIL_FILE_PATH = BASE_DIR / 'auth/sent_emails'
+EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
+DEFAULT_FROM_EMAIL = 'noreply@yamdb.ru'
 
 
 DATABASES = {
@@ -157,3 +158,8 @@ MIN_SCORE_VALUE = 1
 MAX_SCORE_VALUE = 10
 MIN_CONFIRMATION_CODE_VALUE = 100000
 MAX_CONFIRMATION_CODE_VALUE = 999999
+
+# Роли пользователей.
+USER = 'user'
+ADMIN = 'admin'
+MODERATOR = 'moderator'

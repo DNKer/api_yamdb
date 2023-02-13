@@ -1,10 +1,12 @@
 import re
+import os
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db.models import Avg
 from django.http import Http404
-from rest_framework import serializers
+from rest_framework.response import Response
+from rest_framework import serializers, status
 
 from reviews.models import (
     ROLE_CHOICES, Category, Comment, Genre, Review, Title, User
@@ -41,7 +43,16 @@ class ActivationSerializer(serializers.ModelSerializer):
     def validate_username(self, username):
         if User.objects.filter(username=username).exists():
             return username
-        raise Http404
+        raise Http404(f'Недопустимое имя пользователя'
+                      f'или пользователь `{username}` не найден.')
+
+#            return Response('Недопустимое имя пользователя'
+#                            'или пользователь не найден.',
+#                            status=status.HTTP_404_NOT_FOUND)
+        #raise ValidationError({'detail': 'Not found.'}, code=404)
+        #raise Http404('Недопустимое имя пользователя'
+        #              'или пользователь не найден.')
+        # status=status.HTTP_404_NOT_FOUND
 
     def validate(self, data):
         username = data['username']
