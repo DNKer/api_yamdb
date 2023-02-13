@@ -70,19 +70,21 @@ class Activation(APIView):
 
     def post(self, request):
         serializer = ActivationSerializer(data=request.data)
-        if serializer.is_valid():
-            if User.objects.filter(username=request.data['username']).exists():
-                user = User.objects.get(username=request.data['username'])
-                token = get_tokens_for_user(user)
-                return Response(token)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        try:
+            user = User.objects.get(username=data['username'])
+        except User.DoesNotExist:
             return Response(
-                serializer.errors,
-                status=status.HTTP_404_NOT_FOUND
-            )
+                {'username': 'Пользователь не найден!'},
+                status=status.HTTP_404_NOT_FOUND)
+        if data.get('confirmation_code') == user.confirmation_code:
+            token = get_tokens_for_user(user)
+            return Response({'token': str(token)},
+                            status=status.HTTP_201_CREATED)
         return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
+            {'confirmation_code': 'Неверный код подтверждения!'},
+            status=status.HTTP_400_BAD_REQUEST)
 
 
 class MyProfile(APIView):

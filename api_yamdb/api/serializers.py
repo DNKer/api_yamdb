@@ -36,7 +36,6 @@ class ActivationSerializer(serializers.ModelSerializer):
     """
 
     confirmation_code = serializers.IntegerField(required=True)
-
     username = serializers.CharField(max_length=150)
 
     class Meta:
