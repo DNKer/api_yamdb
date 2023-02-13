@@ -1,5 +1,4 @@
-import os
-import os.path
+import re
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -22,7 +21,8 @@ class SignUpSerializer(serializers.ModelSerializer):
         fields = ('username', 'email')
 
     def validate_username(self, username):
-        if username == 'me':
+        ignorecase = re.search(r'(?i)me', username).group()
+        if username == ignorecase:
             raise ValidationError('Недопустимый username')
         return username
 
