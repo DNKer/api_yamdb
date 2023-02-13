@@ -168,7 +168,7 @@ class TitleReciveSerializer(serializers.ModelSerializer):
         many=True,
         read_only=True,
     )
-    rating = serializers.SerializerMethodField()
+    rating = serializers.FloatField()
 
     class Meta:
         model = Title
@@ -176,10 +176,6 @@ class TitleReciveSerializer(serializers.ModelSerializer):
         read_only_fields = (
             'id', 'name', 'year', 'rating', 'description',
         )
-
-    def get_rating(self, obj):
-        """Рассчитываем рейтинг произведения."""
-        return obj.reviews_title.aggregate(Avg('score')).get('score__avg')
 
 
 class ReviewsSerializer(serializers.ModelSerializer):

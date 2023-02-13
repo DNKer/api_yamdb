@@ -187,11 +187,13 @@ class TitleViewSet(viewsets.ModelViewSet):
     """
 
     queryset = Title.objects.all()
-    #queryset = Title.objects.all().annotate(rating=Avg('reviews__score'))
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
     permission_classes = (StaffOrReadOnly,)
     serializer_class = TitleReciveSerializer
+
+    def get_queryset(self):
+        return Title.objects.annotate(rating=Avg('reviews_title__score'))
 
     def get_serializer_class(self):
         """
