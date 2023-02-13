@@ -1,5 +1,6 @@
 from auth.get_token import get_tokens_for_user
 from auth.send_code import send_mail_with_code
+from django.db import IntegrityError
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Avg
 from django.http import JsonResponse
@@ -44,11 +45,20 @@ class SignUp(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         serializer = SignUpSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            send_mail_with_code(request.data)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        try:
+            user = User.objects.get_or_create(
+                username=serializer.validated_data['username'],
+                email=serializer.validated_data['email'],
+            )[0]
+        except IntegrityError:
+            return Response(
+                'Имя пользователя или электронная почта занята.',
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        user.confirmation_code = send_mail_with_code(request.data)
+        user.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class Activation(APIView):

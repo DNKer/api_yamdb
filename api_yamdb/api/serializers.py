@@ -17,6 +17,7 @@ class SignUpSerializer(serializers.ModelSerializer):
     """
     Сериализатор формы регистрации.
     """
+    email = serializers.EmailField(max_length=254)
 
     class Meta:
         model = User
@@ -25,7 +26,7 @@ class SignUpSerializer(serializers.ModelSerializer):
     def validate_username(self, username):
         ignorecase = re.search(r'(?i)me', username).group()
         if username == ignorecase:
-            raise ValidationError('Недопустимый username')
+            raise ValidationError('Недопустимый username!')
         return username
 
 
@@ -35,6 +36,8 @@ class ActivationSerializer(serializers.ModelSerializer):
     """
 
     confirmation_code = serializers.IntegerField(required=True)
+
+    username = serializers.CharField(max_length=150)
 
     class Meta:
         model = User

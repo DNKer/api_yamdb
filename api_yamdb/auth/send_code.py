@@ -9,7 +9,6 @@ rnd = secrets.SystemRandom()
 
 def send_mail_with_code(data):
     email = data['email']
-    username = data['username']
     confirmation_code = rnd.randint(
         settings.MIN_CONFIRMATION_CODE_VALUE,
         settings.MAX_CONFIRMATION_CODE_VALUE
@@ -21,8 +20,4 @@ def send_mail_with_code(data):
         [email],
         fail_silently=True
     )
-    with open(
-        f'{settings.CONFIRMATION_DIR}/{username}.env',
-        mode='w'
-    ) as f:
-        f.write(str(confirmation_code))
+    return confirmation_code
