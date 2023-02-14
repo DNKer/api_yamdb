@@ -1,5 +1,4 @@
 import re
-import os
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
