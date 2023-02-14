@@ -110,7 +110,9 @@ class NotAdminSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    """Сериализатор категории."""
+    """
+    Сериализатор категории.
+    """
 
     class Meta:
         exclude = ('id', )
@@ -118,7 +120,9 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class GenreSerializer(serializers.ModelSerializer):
-    """Сериализатор жанра."""
+    """
+    Сериализатор жанра.
+    """
 
     class Meta:
         exclude = ('id', )
@@ -126,7 +130,9 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class TitleCreateSerializer(serializers.ModelSerializer):
-    """Сериализатор создания произведений."""
+    """
+    Сериализатор создания произведений.
+    """
 
     name = serializers.CharField(
         max_length=200,
@@ -149,7 +155,9 @@ class TitleCreateSerializer(serializers.ModelSerializer):
 
 
 class TitleReciveSerializer(serializers.ModelSerializer):
-    """Сериализатор получения произведений."""
+    """
+    Сериализатор получения произведений.
+    """
 
     category = CategorySerializer(
         read_only=True,
@@ -169,7 +177,9 @@ class TitleReciveSerializer(serializers.ModelSerializer):
 
 
 class ReviewsSerializer(serializers.ModelSerializer):
-    """Сериализатор модели Отзывов."""
+    """
+    Сериализатор модели Отзывов.
+    """
 
     author = serializers.SlugRelatedField(
         slug_field='username',
@@ -205,7 +215,9 @@ class ReviewsSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    """Сериализатор модели Комментариев."""
+    """
+    Сериализатор модели Комментариев.
+    """
 
     author = serializers.SlugRelatedField(
         slug_field='username',
