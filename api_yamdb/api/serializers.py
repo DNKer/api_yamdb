@@ -1,12 +1,7 @@
-import re
-import os
-
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db.models import Avg
 from django.http import Http404
-from rest_framework.response import Response
-from rest_framework import serializers, status
+from rest_framework import serializers
 
 from reviews.models import (
     ROLE_CHOICES, Category, Comment, Genre, Review, Title, User
@@ -17,6 +12,7 @@ class SignUpSerializer(serializers.ModelSerializer):
     """
     Сериализатор формы регистрации.
     """
+    username = serializers.SlugField(max_length=150)
     email = serializers.EmailField(max_length=254)
 
     class Meta:
@@ -24,20 +20,25 @@ class SignUpSerializer(serializers.ModelSerializer):
         fields = ('username', 'email')
 
     def validate_username(self, username):
-        ignorecase = re.search(r'(?i)me', username).group()
-        if username == ignorecase:
-            raise ValidationError('Недопустимый username!')
+        if username.lower() == 'me':
+            raise ValidationError({"message": "недопустимый username"})
         return username
+
+    def validate(self, data):
+        if User.objects.filter(username=data['username']).exists():
+            user = User.objects.get(username=data['username'])
+            if user.email == data['email']:
+                return data
+            raise ValidationError({"message": "Неверный email"})
+        return data
 
 
 class ActivationSerializer(serializers.ModelSerializer):
     """
     Сериализатор получения JWT-токена.
     """
-
-    confirmation_code = serializers.IntegerField(required=True)
-
-    username = serializers.CharField(max_length=150)
+    username = serializers.SlugField(max_length=150)
+    confirmation_code = serializers.CharField(required=True)
 
     class Meta:
         model = User
@@ -48,31 +49,17 @@ class ActivationSerializer(serializers.ModelSerializer):
             return username
         raise Http404(f'Недопустимое имя пользователя'
                       f'или пользователь `{username}` не найден.')
-
-#            return Response('Недопустимое имя пользователя'
-#                            'или пользователь не найден.',
-#                            status=status.HTTP_404_NOT_FOUND)
-        #raise ValidationError({'detail': 'Not found.'}, code=404)
-        #raise Http404('Недопустимое имя пользователя'
-        #              'или пользователь не найден.')
-        # status=status.HTTP_404_NOT_FOUND
+        # У нас к сожалению не получилось вернуть код 404 из сериализатора
+        # А тесты требуют именно 404, поэтому чтобы не засорять вьюхи
+        # решили реализовать эту логику подобным образом
 
     def validate(self, data):
-        username = data['username']
-        path = f'{settings.CONFIRMATION_DIR}/{username}.env'
-        if not os.path.exists(path):
+        user = User.objects.get(username=data['username'])
+        if data['confirmation_code'] != user.confirmation_code:
             raise ValidationError(
-                {"Ошибка": 'Получите новый код подтверждения'}
+                {"Ошибка": 'Неверный код подтверждения'}
             )
-        with open(path) as f:
-            confirmation_code = int(f.read())
-            if confirmation_code != int(data['confirmation_code']):
-                raise ValidationError(
-                    {"Ошибка": 'Неверный код подтверждения'}
-                )
-            f.close()
-            os.remove(path)
-            return data
+        return data
 
 
 class AdminSerializer(serializers.ModelSerializer):
@@ -95,7 +82,7 @@ class UsersSerializer(serializers.ModelSerializer):
     Сериализатор модели User.
     """
 
-    username = serializers.SlugField(max_length=32)
+    username = serializers.SlugField(max_length=150)
     email = serializers.EmailField(max_length=254)
 
     class Meta:
