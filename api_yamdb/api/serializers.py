@@ -48,30 +48,13 @@ class ActivationSerializer(serializers.ModelSerializer):
         raise Http404(f'Недопустимое имя пользователя'
                       f'или пользователь `{username}` не найден.')
 
-#            return Response('Недопустимое имя пользователя'
-#                            'или пользователь не найден.',
-#                            status=status.HTTP_404_NOT_FOUND)
-        #raise ValidationError({'detail': 'Not found.'}, code=404)
-        #raise Http404('Недопустимое имя пользователя'
-        #              'или пользователь не найден.')
-        # status=status.HTTP_404_NOT_FOUND
-
     def validate(self, data):
-        username = data['username']
-        path = f'{settings.CONFIRMATION_DIR}/{username}.env'
-        if not os.path.exists(path):
+        user = User.objects.get(username=data['username'])
+        if data['confirmation_code'] != user.confirmation_code:
             raise ValidationError(
-                {"Ошибка": 'Получите новый код подтверждения'}
+                {"Ошибка": 'Неверный код подтверждения'}
             )
-        with open(path) as f:
-            confirmation_code = int(f.read())
-            if confirmation_code != int(data['confirmation_code']):
-                raise ValidationError(
-                    {"Ошибка": 'Неверный код подтверждения'}
-                )
-            f.close()
-            os.remove(path)
-            return data
+        return data
 
 
 class AdminSerializer(serializers.ModelSerializer):
@@ -122,7 +105,9 @@ class NotAdminSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    """Сериализатор категории."""
+    """
+    Сериализатор категории.
+    """
 
     class Meta:
         exclude = ('id', )
@@ -130,7 +115,9 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class GenreSerializer(serializers.ModelSerializer):
-    """Сериализатор жанра."""
+    """
+    Сериализатор жанра.
+    """
 
     class Meta:
         exclude = ('id', )
@@ -138,7 +125,9 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class TitleCreateSerializer(serializers.ModelSerializer):
-    """Сериализатор создания произведений."""
+    """
+    Сериализатор создания произведений.
+    """
 
     name = serializers.CharField(
         max_length=200,
@@ -161,7 +150,9 @@ class TitleCreateSerializer(serializers.ModelSerializer):
 
 
 class TitleReciveSerializer(serializers.ModelSerializer):
-    """Сериализатор получения произведений."""
+    """
+    Сериализатор получения произведений.
+    """
 
     category = CategorySerializer(
         read_only=True,
@@ -181,7 +172,9 @@ class TitleReciveSerializer(serializers.ModelSerializer):
 
 
 class ReviewsSerializer(serializers.ModelSerializer):
-    """Сериализатор модели Отзывов."""
+    """
+    Сериализатор модели Отзывов.
+    """
 
     author = serializers.SlugRelatedField(
         slug_field='username',
@@ -217,7 +210,9 @@ class ReviewsSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    """Сериализатор модели Комментариев."""
+    """
+    Сериализатор модели Комментариев.
+    """
 
     author = serializers.SlugRelatedField(
         slug_field='username',

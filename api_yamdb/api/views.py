@@ -82,9 +82,7 @@ class Activation(APIView):
             token = get_tokens_for_user(user)
             return Response({'token': str(token)},
                             status=status.HTTP_201_CREATED)
-        return Response(
-            {'confirmation_code': 'Неверный код подтверждения!'},
-            status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors)
 
 
 class MyProfile(APIView):
