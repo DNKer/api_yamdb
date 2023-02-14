@@ -3,18 +3,18 @@ from auth.send_code import send_mail_with_code
 from django.db import IntegrityError
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Avg
-from django.http import JsonResponse
 from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import api_view
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.filters import TitleFilter
 from api.mixins import ModelMixinSet
 from api.permissions import (
-    ChangeAdminOnly, IamOrReadOnly,
-    StaffOrReadOnly, AuthorOrStaffOrReadOnly
+    ChangeAdminOnly, StaffOrReadOnly, AuthorOrStaffOrReadOnly
 )
 from api.serializers import (
     ActivationSerializer, AdminSerializer, CategorySerializer,
@@ -33,17 +33,6 @@ class SignUp(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
-        if User.objects.filter(username=request.data.get('username')).exists():
-            user = User.objects.get(username=request.data.get('username'))
-            if user.email == request.data['email']:
-                send_mail_with_code(request.data)
-                return JsonResponse(
-                    {"message": "Новый код отправлен на почту"}
-                )
-            return Response(
-                {"message": "Неверные данные"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
         serializer = SignUpSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
@@ -70,67 +59,39 @@ class Activation(APIView):
 
     def post(self, request):
         serializer = ActivationSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
-        try:
-            user = User.objects.get(username=data['username'])
-        except User.DoesNotExist:
-            return Response(
-                {'username': 'Пользователь не найден!'},
-                status=status.HTTP_404_NOT_FOUND)
-        if data.get('confirmation_code') == user.confirmation_code:
+        if serializer.is_valid(raise_exception=True):
+            user = User.objects.get(
+                username=serializer.validated_data['username'])
             token = get_tokens_for_user(user)
-            return Response({'token': str(token)},
+            return Response({'token': token},
                             status=status.HTTP_201_CREATED)
         return Response(serializer.errors)
-
-
-class MyProfile(APIView):
-    """
-    Личный профиль.
-    """
-
-    permission_classes = (IamOrReadOnly,)
-
-    def get(self, request):
-        serializer = UsersSerializer(request.user)
-        return Response(serializer.data)
-
-    def patch(self, request):
-        user = request.user
-        if user.is_superuser or user.role == 'admin':
-            serializer = AdminSerializer(user, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data)
-            return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        serializer = UsersSerializer(user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # status не прописываем - отдаём в зависимости от ошибки
 
 
 class APIUsers(APIView):
     """
-    UsersView для обращения по username.
+    Класс для Юзера.
     """
-
-    queryset = User.objects.all()
     permission_classes = [ChangeAdminOnly]
+    filter_backends = (SearchFilter,)
+    filter_fields = ['username',]
+
+    def post(self, request):
+        serializer = AdminSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request, username):
-        if request.user.is_authenticated:
+        if username:
             user = get_object_or_404(User, username=username)
             serializer = UsersSerializer(user)
             return Response(serializer.data)
-        return Response(
-            'Вы не авторизованы',
-            status=status.HTTP_401_UNAUTHORIZED
-        )
+        users = User.objects.all()
+        serializer = UsersSerializer(users)
+        return Response(serializer.data)
 
     def patch(self, request, username):
         user = User.objects.get(username=username)
@@ -146,23 +107,26 @@ class APIUsers(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class UserViewSet(viewsets.ModelViewSet):
-    """
-    Вьюсет для Юзера.
-    """
-
-    queryset = User.objects.all()
-    serializer_class = UsersSerializer
-    permission_classes = [ChangeAdminOnly]
-    filter_backends = (SearchFilter,)
-    search_fields = ('username',)
-
-    def create(self, request):
-        serializer = AdminSerializer(data=request.data)
+@api_view(['GET', 'PATCH'])
+def me(request):
+    user = request.user
+    if request.method == 'GET':
+        serializer = UsersSerializer(user)
+        return Response(serializer.data)
+    if user.is_superuser or user.is_admin:
+        serializer = AdminSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.data)
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    serializer = UsersSerializer(user, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CategoryViewSet(ModelMixinSet):

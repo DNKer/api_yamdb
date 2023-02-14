@@ -20,4 +20,4 @@ def send_mail_with_code(data):
         [email],
         fail_silently=True
     )
-    return confirmation_code
+    return str(confirmation_code)
