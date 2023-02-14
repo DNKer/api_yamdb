@@ -66,7 +66,6 @@ class Activation(APIView):
             return Response({'token': token},
                             status=status.HTTP_201_CREATED)
         return Response(serializer.errors)
-        # status не прописываем - отдаём в зависимости от ошибки
 
 
 class APIUsers(APIView):
