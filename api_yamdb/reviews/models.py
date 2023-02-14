@@ -1,12 +1,10 @@
 from django.conf import settings
-from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-USER = 'user'
-ADMIN = 'admin'
-MODERATOR = 'moderator'
+from api_yamdb.settings import ADMIN, MODERATOR, USER
+from .validators import check_future_year
 
 ROLE_CHOICES = [
     (USER, USER),
@@ -27,7 +25,7 @@ class CreatedModel(models.Model):
         auto_now_add=True,
     )
 
-    class Meta():
+    class Meta:
         abstract = True
 
     def __str__(self):
@@ -79,9 +77,33 @@ class User(AbstractUser):
         blank=True,
         help_text='Фамилия пользователя'
     )
+    confirmation_code = models.CharField(
+        'код подтверждения',
+        max_length=255,
+        null=True,
+        blank=False,
+        default='XXXX'
+    )
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email']
+
+    @property
+    def is_user(self):
+        return self.role == USER
+
+    @property
+    def is_admin(self):
+        return self.role == ADMIN
+
+    @property
+    def is_moderator(self):
+        return self.role == MODERATOR
+
+    class Meta:
+        ordering = ('id',)
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
 
     def __str__(self):
         return self.username
@@ -139,7 +161,9 @@ class Title(models.Model):
     )
     year = models.IntegerField(
         verbose_name='Год создания',
-        null=True
+        null=True,
+        help_text='Год выхода',
+        validators=[check_future_year]
     )
     category = models.ForeignKey(
         Category,
