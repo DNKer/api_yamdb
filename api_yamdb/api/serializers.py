@@ -4,7 +4,8 @@ from django.http import Http404
 from rest_framework import serializers
 
 from reviews.models import (
-    ROLE_CHOICES, Category, Comment, Genre, Review, Title, User
+    ROLE_CHOICES, Category, Comment,
+    Genre, Review, Title, User,
 )
 
 
@@ -12,6 +13,7 @@ class SignUpSerializer(serializers.ModelSerializer):
     """
     Сериализатор формы регистрации.
     """
+
     username = serializers.SlugField(max_length=150)
     email = serializers.EmailField(max_length=254)
 
@@ -37,6 +39,7 @@ class ActivationSerializer(serializers.ModelSerializer):
     """
     Сериализатор получения JWT-токена.
     """
+
     username = serializers.SlugField(max_length=150)
     confirmation_code = serializers.CharField(required=True)
 
@@ -84,21 +87,6 @@ class UsersSerializer(serializers.ModelSerializer):
 
     username = serializers.SlugField(max_length=150)
     email = serializers.EmailField(max_length=254)
-
-    class Meta:
-        model = User
-        fields = (
-            'username', 'email', 'first_name',
-            'last_name', 'bio', 'role',
-        )
-        read_only_fields = ('username', 'email', 'role',)
-
-
-class NotAdminSerializer(serializers.ModelSerializer):
-    """
-    Сериализатор модели User для изменения
-    пользователем своего аккаунта.
-    """
 
     class Meta:
         model = User
