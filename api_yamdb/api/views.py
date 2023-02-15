@@ -4,7 +4,7 @@ from django.db import IntegrityError
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Avg
 from rest_framework import permissions, status, viewsets
-from rest_framework.decorators import api_view
+from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
@@ -69,64 +69,33 @@ class Activation(APIView):
         # status не прописываем - отдаём в зависимости от ошибки
 
 
-class APIUsers(APIView):
+class UserViewSet(viewsets.ModelViewSet):
     """
-    Класс для Юзера.
+    Работа с пользователями.
     """
-    permission_classes = [ChangeAdminOnly]
+    queryset = User.objects.all()
+    serializer_class = AdminSerializer
+    permission_classes = (ChangeAdminOnly,)
     filter_backends = (SearchFilter,)
-    filter_fields = ['username',]
+    lookup_field = 'username'
+    search_fields = ('username',)
+    http_method_names = ['get', 'post', 'head', 'patch', 'delete']
 
-    def post(self, request):
-        serializer = AdminSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def get(self, request, username):
-        if username:
-            user = get_object_or_404(User, username=username)
-            serializer = UsersSerializer(user)
-            return Response(serializer.data)
-        users = User.objects.all()
-        serializer = UsersSerializer(users)
-        return Response(serializer.data)
-
-    def patch(self, request, username):
-        user = User.objects.get(username=username)
-        serializer = AdminSerializer(user, data=request.data, partial=True)
-        if serializer.is_valid():
+    @action(
+        detail=False, methods=['get', 'patch'],
+        url_path='me', url_name='me',
+        permission_classes=(permissions.IsAuthenticated,)
+    )
+    def my_profile(self, request):
+        serializer = UsersSerializer(request.user)
+        if request.method == 'PATCH':
+            serializer = UsersSerializer(
+                request.user, data=request.data, partial=True
+            )
+            serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, username):
-        user = User.objects.get(username=username)
-        user.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-@api_view(['GET', 'PATCH'])
-def me(request):
-    user = request.user
-    if request.method == 'GET':
-        serializer = UsersSerializer(user)
-        return Response(serializer.data)
-    if user.is_superuser or user.is_admin:
-        serializer = AdminSerializer(user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    serializer = UsersSerializer(user, data=request.data, partial=True)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class CategoryViewSet(ModelMixinSet):
