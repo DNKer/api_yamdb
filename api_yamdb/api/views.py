@@ -1,18 +1,20 @@
 from auth.get_token import get_tokens_for_user
 from auth.send_code import send_mail_with_code
+from django.db import IntegrityError
 from django_filters.rest_framework import DjangoFilterBackend
-from django.http import JsonResponse
+from django.db.models import Avg
 from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.filters import TitleFilter
 from api.mixins import ModelMixinSet
 from api.permissions import (
-    ChangeAdminOnly, IamOrReadOnly,
-    StaffOrReadOnly, AuthorOrStaffOrReadOnly
+    ChangeAdminOnly, StaffOrReadOnly, AuthorOrStaffOrReadOnly
 )
 from api.serializers import (
     ActivationSerializer, AdminSerializer, CategorySerializer,
@@ -31,23 +33,21 @@ class SignUp(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
-        if User.objects.filter(username=request.data.get('username')).exists():
-            user = User.objects.get(username=request.data.get('username'))
-            if user.email == request.data['email']:
-                send_mail_with_code(request.data)
-                return JsonResponse(
-                    {"message": "Новый код отправлен на почту"}
-                )
+        serializer = SignUpSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            user = User.objects.get_or_create(
+                username=serializer.validated_data['username'],
+                email=serializer.validated_data['email'],
+            )[0]
+        except IntegrityError:
             return Response(
-                {"message": "Неверные данные"},
+                'Имя пользователя или электронная почта занята.',
                 status=status.HTTP_400_BAD_REQUEST
             )
-        serializer = SignUpSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            send_mail_with_code(request.data)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        user.confirmation_code = send_mail_with_code(request.data)
+        user.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class Activation(APIView):
@@ -59,99 +59,42 @@ class Activation(APIView):
 
     def post(self, request):
         serializer = ActivationSerializer(data=request.data)
-        if serializer.is_valid():
-            if User.objects.filter(username=request.data['username']).exists():
-                user = User.objects.get(username=request.data['username'])
-                token = get_tokens_for_user(user)
-                return Response(token)
-            return Response(
-                serializer.errors,
-                status=status.HTTP_404_NOT_FOUND
-            )
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-
-class MyProfile(APIView):
-    """
-    Личный профиль.
-    """
-
-    permission_classes = (IamOrReadOnly,)
-
-    def get(self, request):
-        serializer = UsersSerializer(request.user)
-        return Response(serializer.data)
-
-    def patch(self, request):
-        user = request.user
-        if user.is_superuser or user.role == 'admin':
-            serializer = AdminSerializer(user, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data)
-            return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        serializer = UsersSerializer(user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class APIUsers(APIView):
-    """
-    UsersView для обращения по username.
-    """
-
-    queryset = User.objects.all()
-    permission_classes = [ChangeAdminOnly]
-
-    def get(self, request, username):
-        if request.user.is_authenticated:
-            user = get_object_or_404(User, username=username)
-            serializer = UsersSerializer(user)
-            return Response(serializer.data)
-        return Response(
-            'Вы не авторизованы',
-            status=status.HTTP_401_UNAUTHORIZED
-        )
-
-    def patch(self, request, username):
-        user = User.objects.get(username=username)
-        serializer = AdminSerializer(user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, username):
-        user = User.objects.get(username=username)
-        user.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if serializer.is_valid(raise_exception=True):
+            user = User.objects.get(
+                username=serializer.validated_data['username'])
+            token = get_tokens_for_user(user)
+            return Response({'token': token},
+                            status=status.HTTP_201_CREATED)
+        return Response(serializer.errors)
 
 
 class UserViewSet(viewsets.ModelViewSet):
     """
-    Вьюсет для Юзера.
+    Работа с пользователями.
     """
-
     queryset = User.objects.all()
-    serializer_class = UsersSerializer
-    permission_classes = [ChangeAdminOnly]
+    serializer_class = AdminSerializer
+    permission_classes = (ChangeAdminOnly,)
     filter_backends = (SearchFilter,)
+    lookup_field = 'username'
     search_fields = ('username',)
+    http_method_names = ['get', 'post', 'head', 'patch', 'delete']
 
-    def create(self, request):
-        serializer = AdminSerializer(data=request.data)
-        if serializer.is_valid():
+    @action(
+        detail=False, methods=['get', 'patch'],
+        url_path='me', url_name='me',
+        permission_classes=(permissions.IsAuthenticated,)
+    )
+    def my_profile(self, request):
+        serializer = UsersSerializer(request.user)
+        if request.method == 'PATCH':
+            serializer = UsersSerializer(
+                request.user, data=request.data, partial=True
+            )
+            serializer.is_valid(raise_exception=True)
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class CategoryViewSet(ModelMixinSet):
@@ -190,6 +133,9 @@ class TitleViewSet(viewsets.ModelViewSet):
     filterset_class = TitleFilter
     permission_classes = (StaffOrReadOnly,)
     serializer_class = TitleReciveSerializer
+
+    def get_queryset(self):
+        return Title.objects.annotate(rating=Avg('reviews_title__score'))
 
     def get_serializer_class(self):
         """

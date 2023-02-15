@@ -1,9 +1,5 @@
-import os
-import os.path
-
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db.models import Avg
 from django.http import Http404
 from rest_framework import serializers
 
@@ -16,23 +12,33 @@ class SignUpSerializer(serializers.ModelSerializer):
     """
     Сериализатор формы регистрации.
     """
+    username = serializers.SlugField(max_length=150)
+    email = serializers.EmailField(max_length=254)
 
     class Meta:
         model = User
         fields = ('username', 'email')
 
     def validate_username(self, username):
-        if username == 'me':
-            raise ValidationError('Недопустимый username')
+        if username.lower() == 'me':
+            raise ValidationError({"message": "недопустимый username"})
         return username
+
+    def validate(self, data):
+        if User.objects.filter(username=data['username']).exists():
+            user = User.objects.get(username=data['username'])
+            if user.email == data['email']:
+                return data
+            raise ValidationError({"message": "Неверный email"})
+        return data
 
 
 class ActivationSerializer(serializers.ModelSerializer):
     """
     Сериализатор получения JWT-токена.
     """
-
-    confirmation_code = serializers.IntegerField(required=True)
+    username = serializers.SlugField(max_length=150)
+    confirmation_code = serializers.CharField(required=True)
 
     class Meta:
         model = User
@@ -41,24 +47,19 @@ class ActivationSerializer(serializers.ModelSerializer):
     def validate_username(self, username):
         if User.objects.filter(username=username).exists():
             return username
-        raise Http404
+        raise Http404(f'Недопустимое имя пользователя'
+                      f'или пользователь `{username}` не найден.')
+        # У нас, к сожалению, не получилось вернуть код 404 из сериализатора
+        # А тесты требуют именно 404, поэтому чтобы не засорять вьюхи
+        # решили реализовать эту логику подобным образом
 
     def validate(self, data):
-        username = data['username']
-        path = f'{settings.CONFIRMATION_DIR}/{username}.env'
-        if not os.path.exists(path):
+        user = User.objects.get(username=data['username'])
+        if data['confirmation_code'] != user.confirmation_code:
             raise ValidationError(
-                {"Ошибка": 'Получите новый код подтверждения'}
+                {"Ошибка": 'Неверный код подтверждения'}
             )
-        with open(path) as f:
-            confirmation_code = int(f.read())
-            if confirmation_code != int(data['confirmation_code']):
-                raise ValidationError(
-                    {"Ошибка": 'Неверный код подтверждения'}
-                )
-            f.close()
-            os.remove(path)
-            return data
+        return data
 
 
 class AdminSerializer(serializers.ModelSerializer):
@@ -81,7 +82,7 @@ class UsersSerializer(serializers.ModelSerializer):
     Сериализатор модели User.
     """
 
-    username = serializers.SlugField(max_length=32)
+    username = serializers.SlugField(max_length=150)
     email = serializers.EmailField(max_length=254)
 
     class Meta:
@@ -109,7 +110,9 @@ class NotAdminSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    """Сериализатор категории."""
+    """
+    Сериализатор категории.
+    """
 
     class Meta:
         exclude = ('id', )
@@ -117,7 +120,9 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class GenreSerializer(serializers.ModelSerializer):
-    """Сериализатор жанра."""
+    """
+    Сериализатор жанра.
+    """
 
     class Meta:
         exclude = ('id', )
@@ -125,7 +130,9 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class TitleCreateSerializer(serializers.ModelSerializer):
-    """Сериализатор создания произведений."""
+    """
+    Сериализатор создания произведений.
+    """
 
     name = serializers.CharField(
         max_length=200,
@@ -148,7 +155,9 @@ class TitleCreateSerializer(serializers.ModelSerializer):
 
 
 class TitleReciveSerializer(serializers.ModelSerializer):
-    """Сериализатор получения произведений."""
+    """
+    Сериализатор получения произведений.
+    """
 
     category = CategorySerializer(
         read_only=True,
@@ -157,7 +166,7 @@ class TitleReciveSerializer(serializers.ModelSerializer):
         many=True,
         read_only=True,
     )
-    rating = serializers.SerializerMethodField()
+    rating = serializers.FloatField()
 
     class Meta:
         model = Title
@@ -166,13 +175,11 @@ class TitleReciveSerializer(serializers.ModelSerializer):
             'id', 'name', 'year', 'rating', 'description',
         )
 
-    def get_rating(self, obj):
-        """Рассчитываем рейтинг произведения."""
-        return obj.reviews_title.aggregate(Avg('score')).get('score__avg')
-
 
 class ReviewsSerializer(serializers.ModelSerializer):
-    """Сериализатор модели Отзывов."""
+    """
+    Сериализатор модели Отзывов.
+    """
 
     author = serializers.SlugRelatedField(
         slug_field='username',
@@ -208,7 +215,9 @@ class ReviewsSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    """Сериализатор модели Комментариев."""
+    """
+    Сериализатор модели Комментариев.
+    """
 
     author = serializers.SlugRelatedField(
         slug_field='username',

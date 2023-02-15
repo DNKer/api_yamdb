@@ -9,7 +9,7 @@ load_dotenv()
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api_yamdb.settings')
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY', default='SECRET_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY', default='#7jc3)js0k176thc-z=1%4^s4_6g239*)1%2+oz0qd3@pc7=fb')
 
 DEBUG = True
 
@@ -41,7 +41,7 @@ MIDDLEWARE = [
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ],
 
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
@@ -106,8 +106,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'api_yamdb.wsgi.application'
 
+# Настройки почты. Для отладки печать в файл.
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-EMAIL_FILE_PATH = BASE_DIR / 'auth/sent_emails'
+EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
+DEFAULT_FROM_EMAIL = 'noreply@yamdb.ru'
 
 
 DATABASES = {
@@ -157,3 +159,8 @@ MIN_SCORE_VALUE = 1
 MAX_SCORE_VALUE = 10
 MIN_CONFIRMATION_CODE_VALUE = 100000
 MAX_CONFIRMATION_CODE_VALUE = 999999
+
+# Роли пользователей.
+USER = 'user'
+ADMIN = 'admin'
+MODERATOR = 'moderator'
