@@ -1,13 +1,11 @@
-from auth.get_token import get_tokens_for_user
-from auth.send_code import send_mail_with_code
+from django.conf import settings
 from django.db import IntegrityError
-from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Avg
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -22,7 +20,11 @@ from api.serializers import (
     SignUpSerializer, TitleCreateSerializer,
     TitleReciveSerializer, UsersSerializer
 )
-from reviews.models import Category, Genre, Review, Title, User
+from auth.get_token import get_tokens_for_user
+from auth.send_code import send_mail_with_code
+from reviews.models import (
+    Category, Genre, Review, Title, User,
+)
 
 
 class SignUp(APIView):
@@ -39,7 +41,7 @@ class SignUp(APIView):
             user = User.objects.get_or_create(
                 username=serializer.validated_data['username'],
                 email=serializer.validated_data['email'],
-            )[0]
+            )[settings.SIGN_UP_USER_INDEX]
         except IntegrityError:
             return Response(
                 'Имя пользователя или электронная почта занята.',
@@ -183,6 +185,7 @@ class CommentsViewSet(viewsets.ModelViewSet):
         return get_object_or_404(
             Review,
             id=self.kwargs.get('review_id'),
+            title__id=self.kwargs.get('title_id')
         )
 
     def get_queryset(self):

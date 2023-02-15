@@ -3,13 +3,12 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from api_yamdb.settings import ADMIN, MODERATOR, USER
-from .validators import check_future_year
+from reviews.validators import check_future_year
 
 ROLE_CHOICES = [
-    (USER, USER),
-    (ADMIN, ADMIN),
-    (MODERATOR, MODERATOR),
+    (settings.USER, settings.USER),
+    (settings.ADMIN, settings.ADMIN),
+    (settings.MODERATOR, settings.MODERATOR),
 ]
 
 
@@ -27,6 +26,7 @@ class CreatedModel(models.Model):
 
     class Meta:
         abstract = True
+        ordering = ('-pub_date')
 
     def __str__(self):
         """Возвращаем укороченный текст модели."""
@@ -58,7 +58,7 @@ class User(AbstractUser):
         verbose_name='Роль',
         max_length=20,
         choices=ROLE_CHOICES,
-        default=USER,
+        default=settings.USER,
         help_text='Выберете роль пользователя'
     )
     bio = models.TextField(
@@ -90,15 +90,15 @@ class User(AbstractUser):
 
     @property
     def is_user(self):
-        return self.role == USER
+        return self.role == settings.USER
 
     @property
     def is_admin(self):
-        return self.role == ADMIN
+        return self.role == settings.ADMIN
 
     @property
     def is_moderator(self):
-        return self.role == MODERATOR
+        return self.role == settings.MODERATOR
 
     class Meta:
         ordering = ('id',)
