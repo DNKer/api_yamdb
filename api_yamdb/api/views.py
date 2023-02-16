@@ -73,6 +73,7 @@ class UserViewSet(viewsets.ModelViewSet):
     """
     Работа с пользователями.
     """
+
     queryset = User.objects.all()
     serializer_class = AdminSerializer
     permission_classes = (ChangeAdminOnly,)
