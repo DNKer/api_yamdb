@@ -61,13 +61,12 @@ class Activation(APIView):
 
     def post(self, request):
         serializer = ActivationSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            user = User.objects.get(
-                username=serializer.validated_data['username'])
-            token = get_tokens_for_user(user)
-            return Response({'token': token},
-                            status=status.HTTP_201_CREATED)
-        return Response(serializer.errors)
+        serializer.is_valid(raise_exception=True)
+        user = User.objects.get(
+            username=serializer.validated_data['username'])
+        token = get_tokens_for_user(user)
+        return Response({'token': token},
+                        status=status.HTTP_201_CREATED)
 
 
 class UserViewSet(viewsets.ModelViewSet):

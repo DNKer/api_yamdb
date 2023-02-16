@@ -1,6 +1,5 @@
-import datetime as dt
-
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 
 def check_future_year(value):
@@ -8,7 +7,9 @@ def check_future_year(value):
     Проверка на корректность года
     выхода произведения.
     """
-    if value > dt.date.today().year:
+
+    now = timezone.now().year
+    if value > now:
         raise ValidationError(
-            f'Год выхода произведения: {value}, не может быть больше текущего!'
+            f'{value} не может быть больше {now}'
         )
